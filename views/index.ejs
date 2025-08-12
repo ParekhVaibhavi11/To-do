@@ -1,53 +1,48 @@
-<%- include('header'); %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .task-list { list-style: none; padding: 0; }
+        .task-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .task-item .actions { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+    <h1>To-Do List</h1>
 
-<main class="main-content">
-    <% if (alert) { %>
-        <div class="alert"><%= alert %></div>
-    <% } %>
+    <form action="/tasks" method="POST">
+        <input type="text" name="title" placeholder="Add a new task..." required>
+        <button type="submit">Add Task</button>
+    </form>
 
-    <section class="add-task-section">
-        <form action="/tasks" method="POST" class="add-task-form">
-            <input type="text" name="title" placeholder="Add a new task..." required>
-            <select name="priority">
-                <option value="Low">Low</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-            </select>
-            <button type="submit">Add Task</button>
-        </form>
-    </section>
+    <ul class="task-list">
+        <% tasks.forEach(task => { %>
+            <li class="task-item">
+                <span><%= task.title %> - Priority: <%= task.priority %></span>
+                <div class="actions">
+                    <form action="/tasks/edit/<%= task._id %>?_method=PUT" method="POST">
+                        <select name="priority" onchange="this.form.submit()">
+                            <option value="low" <%= task.priority === 'low' ? 'selected' : '' %>>Low</option>
+                            <option value="high" <%= task.priority === 'high' ? 'selected' : '' %>>High</option>
+                            <option value="urgent" <%= task.priority === 'urgent' ? 'selected' : '' %>>Urgent</option>
+                        </select>
+                        <button type="submit" hidden>
+                            ✏️
+                        </button>
+                    </form>
 
-    <section class="task-list-section">
-        <ul class="task-list">
-            <% if (tasks.length === 0) { %>
-                <li class="no-tasks">No tasks yet. Start by adding one!</li>
-            <% } else { %>
-                <% tasks.forEach(task => { %>
-                    <li class="task-item" data-priority="<%= task.priority %>">
-                        <span class="task-title priority-<%= task.priority.toLowerCase() %>">
-                            <%= task.title %>
-                        </span>
-                        <div class="task-actions">
-                            <form action="/tasks/edit/<%= task._id %>" method="POST" class="edit-task-form" style="display: none;">
-                                <input type="text" name="title" value="<%= task.title %>" required>
-                                <select name="priority">
-                                    <option value="Low" <%= task.priority === 'Low' ? 'selected' : '' %>>Low</option>
-                                    <option value="High" <%= task.priority === 'High' ? 'selected' : '' %>>High</option>
-                                    <option value="Urgent" <%= task.priority === 'Urgent' ? 'selected' : '' %>>Urgent</option>
-                                </select>
-                                <button type="submit" class="save-btn">Save</button>
-                                <button type="button" class="cancel-btn">Cancel</button>
-                            </form>
-                            <button class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
-                            <form action="/tasks/delete/<%= task._id %>" method="POST" style="display:inline;">
-                                <button type="submit" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
-                            </form>
-                        </div>
-                    </li>
-                <% }) %>
-            <% } %>
-        </ul>
-    </section>
-</main>
-
-<%- include('footer'); %>
+                    <form action="/tasks/delete/<%= task._id %>?_method=DELETE" method="POST">
+                        <button type="submit">
+                            🗑️
+                        </button>
+                    </form>
+                </div>
+            </li>
+        <% }); %>
+    </ul>
+</body>
+</html>

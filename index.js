@@ -1,96 +1,95 @@
-// index.js
-
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
+const bodyParser = require('body-parser');
+const ejs = require('ejs');
+
 const app = express();
-const PORT = process.env.PORT || 3000; // Correctly using process.env.PORT
+const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
+app.use(express.static('public')); // For CSS/JS files if needed
+
+require('dotenv').config();
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB connected successfully!'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const uri = process.env.MONGODB_URI;
+mongoose.connect(uri)
+  .then(() => console.log("Connected to MongoDB Atlas"))
+  .catch(err => console.error("Could not connect to MongoDB Atlas", err));
 
-// Define Task Schema and Model
+// MongoDB Schema
 const taskSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    priority: {
-        type: String,
-        enum: ['Low', 'High', 'Urgent'],
-        default: 'Low'
-    }
+  title: {
+    type: String,
+    required: true
+  },
+  priority: {
+    type: String,
+    enum: ['urgent', 'low', 'high'],
+    default: 'low'
+  }
 });
 
 const Task = mongoose.model('Task', taskSchema);
 
-// Routes
-// 1. Get all tasks (Read)
+// GET all tasks (Read)
 app.get('/', async (req, res) => {
-    try {
-        const tasks = await Task.find().sort({ createdAt: -1 });
-        const alertMessage = req.query.alert;
-        res.render('index', { tasks: tasks, alert: alertMessage });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
+  try {
+    const tasks = await Task.find({});
+    res.render('index', { tasks: tasks });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
 });
 
-// 2. Add a new task (Create)
+// POST a new task (Create)
 app.post('/tasks', async (req, res) => {
-    const { title, priority } = req.body;
-    if (!title || title.trim() === '') {
-        return res.redirect('/?alert=Task title cannot be empty!');
-    }
-    try {
-        const newTask = new Task({ title: title.trim(), priority: priority || 'Low' });
-        await newTask.save();
-        res.redirect('/?alert=Task added successfully!');
-    } catch (err) {
-        console.error(err);
-        res.redirect('/?alert=Failed to add task.');
-    }
+  const { title } = req.body;
+  if (!title) {
+    return res.status(400).send('<script>alert("Task title cannot be empty!"); window.location.href="/";</script>');
+  }
+  try {
+    const newTask = new Task({
+      title: title,
+      priority: 'low' // Default priority
+    });
+    await newTask.save();
+    res.redirect('/');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
 });
 
-// 3. Update an existing task (Update)
+// PUT to update a task (Update)
 app.post('/tasks/edit/:id', async (req, res) => {
-    const { title, priority } = req.body;
-    const taskId = req.params.id;
-    if (!title || title.trim() === '') {
-        return res.redirect(`/?alert=Task title cannot be empty!`);
-    }
-    try {
-        await Task.findByIdAndUpdate(taskId, { title: title.trim(), priority: priority });
-        res.redirect('/?alert=Task updated successfully!');
-    } catch (err) {
-        console.error(err);
-        res.redirect('/?alert=Failed to update task.');
-    }
+  const { id } = req.params;
+  const { priority } = req.body;
+  try {
+    await Task.findByIdAndUpdate(id, { priority });
+    res.redirect('/');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
 });
 
-// 4. Delete a task (Delete)
+// POST to delete a task (Delete)
 app.post('/tasks/delete/:id', async (req, res) => {
-    try {
-        await Task.findByIdAndDelete(req.params.id);
-        res.redirect('/?alert=Task deleted successfully!');
-    } catch (err) {
-        console.error(err);
-        res.redirect('/?alert=Failed to delete task.');
-    }
+  const { id } = req.params;
+  try {
+    await Task.findByIdAndDelete(id);
+    res.redirect('/');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
 });
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

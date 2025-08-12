@@ -1,10 +1,2 @@
-# Dependency directory
-/node_modules
-
-# Environment variables
+node_modules/
 .env
-
-# Logs and cache
-*.log
-npm-debug.log*
-.DS_Store
