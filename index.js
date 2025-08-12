@@ -6,20 +6,17 @@ const ejs = require('ejs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public')); // For CSS/JS files if needed
 
 require('dotenv').config();
-
-// MongoDB Connection
 const uri = process.env.MONGODB_URI;
 mongoose.connect(uri)
   .then(() => console.log("Connected to MongoDB Atlas"))
   .catch(err => console.error("Could not connect to MongoDB Atlas", err));
 
-// MongoDB Schema
+
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -34,7 +31,7 @@ const taskSchema = new mongoose.Schema({
 
 const Task = mongoose.model('Task', taskSchema);
 
-// GET all tasks (Read)
+
 app.get('/', async (req, res) => {
   try {
     const tasks = await Task.find({});
@@ -45,7 +42,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-// POST a new task (Create)
+
 app.post('/tasks', async (req, res) => {
   const { title } = req.body;
   if (!title) {
@@ -54,7 +51,7 @@ app.post('/tasks', async (req, res) => {
   try {
     const newTask = new Task({
       title: title,
-      priority: 'low' // Default priority
+      priority: 'urgent' 
     });
     await newTask.save();
     res.redirect('/');
@@ -77,7 +74,7 @@ app.post('/tasks/edit/:id', async (req, res) => {
   }
 });
 
-// POST to delete a task (Delete)
+
 app.post('/tasks/delete/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -89,7 +86,7 @@ app.post('/tasks/delete/:id', async (req, res) => {
   }
 });
 
-// Start the server
+
 app.listen(PORT, () => {
   console.log(`Server is running on port http://localhost:${PORT}`);
 });
